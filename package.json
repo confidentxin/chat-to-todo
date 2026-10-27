@@ -1,0 +1,1 @@
+{"description":"把聊天记录变成桌面待办便签：桌宠常驻桌面，点击展开贴纸面板，本地规则提取待办，无需 API Key。","devDependencies":{"electron":"^33.0.0"},"license":"MIT","main":"main.js","name":"chat-to-todo","scripts":{"generate-demo":"node scripts/generate-demo-output.js","start":"electron .","test":"node --test tests/extractor.test.js"},"version":"0.1.0"}

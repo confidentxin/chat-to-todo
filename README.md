@@ -1,0 +1,92 @@
+# 聊天转待办桌面版 / Chat-to-Todo Desktop
+
+把聊天记录变成一直放在桌面上的待办便签：一个小形象（桌宠）常驻桌面，点一下展开贴纸面板，看到待办清单；再点一下或点收起，缩回只剩小形象。
+
+## 解决什么问题
+
+约人、接任务都散在聊天记录里，翻不到、容易忘。缺的不是记事本，是一个“把聊天变成待办、并一直放在桌面上看得见”的动作。这个小应用就是做这件事：粘贴一段聊天文字，或上传 `.txt` 聊天记录，它会把里面的事项、时间、地点、相关人提取成待办，逐条确认后存在本地，导出成 Markdown。
+
+## 目标用户
+
+经常在聊天里约事、接任务的学生和上班族。第一个用户就是作者本人。
+
+## MVP 功能（v1）
+
+1. 桌面应用启动后显示桌宠小形象，点击切换展开/收起贴纸面板；小形象窗口可拖动。
+2. 面板里可粘贴聊天文字，或上传 `.txt` 聊天记录，点「提取待办」得到结果。
+3. 每条待办提取事项、时间、地点、相关人；相对时间（明天、下周三、今天等）按 Asia/Shanghai 解析成具体日期时间，不确定的标出来（不确定标记 + 原因）。
+4. 提取结果可编辑（标题、日期、时间、地点、相关人）、可删除、可勾选确认；确认后的清单存在本地（localStorage），重启应用还在。
+5. 导出已确认清单为 Markdown。
+6. 不需要 API Key 也能跑：本地规则提取，聊天文字不上传服务器。
+7. 技术路线：Electron + HTML/CSS/JS，Mac / Windows 都可跑。
+
+今晚不做（后面迭代）：截图 OCR、微信直连、自动发提醒、导出 `.ics`、桌宠动画和换皮肤、多人同步、账号系统。
+
+## 怎么跑
+
+需要 Node.js 18+。
+
+```bash
+npm install
+npm start
+npm test
+```
+
+`npm start` 启动桌面应用；`npm test` 跑提取器测试；`node scripts/generate-demo-output.js` 重新生成 `docs/demo-output.md`。
+
+提示：在 Linux root / 容器环境里启动 Electron 报错 `Running as root without --no-sandbox` 时，可用 `ELECTRON_DISABLE_SANDBOX=1` 再启动；Mac / Windows 正常使用不需要。
+
+## 隐私说明
+
+- 本地规则提取：`src/extractor.js` 是纯本地正则/规则，没有网络请求，没有 API Key。
+- 聊天文字只在当前应用内处理，不上传到任何服务器。
+- 确认后的待办只存在本机浏览器的本地存储里，不同步、不上报。
+- 仓库里没有密钥、token、凭证、`.env` 这类文件。
+
+## 示例
+
+`examples/` 里有 3 个示例聊天（基准日 2026-10-28，星期三）：
+
+- `chat-badminton.txt`：明天晚上 19:30 去体育馆打羽毛球 → 2026-10-29 19:30，地点体育馆，相关人小明。
+- `chat-homework.txt`：作业周五之前交 → 2026-10-30，只有截止日、无具体时刻，标不确定。
+- `chat-dinner.txt`：下周三中午一起吃饭 → 2026-11-04 12:00，相关人小明。
+
+完整输出见 `docs/demo-output.md`（由脚本生成），界面截图见 `docs/screenshot.png`。
+
+## 验证过什么
+
+在云电脑（Linux + Node v24.22.1）上实际验证：
+
+- `npm install` 成功，Electron 33.4.11（见 `package-lock.json`）。
+- `npm test`：12 个测试全部通过。覆盖：明天 19:30、周五截止、下周三中午、无时间不编造、今天下午 3 点、人名提取、地点提取、寒暄过滤、中文数字时刻（晚上七点半）、下周一截止、发送人前缀清理、只有时刻时日期推断。
+- `node scripts/generate-demo-output.js`：3 个示例的提取结果与测试口径一致（见 `docs/demo-output.md`）。
+- Electron 启动验证：在 `xvfb-run` 下用 `CHAT_TODO_SMOKE=1` 启动，窗口正常加载、展开面板并提取出示例待办，`capturePage` 生成 `docs/screenshot.png`，退出码 0。
+- 敏感文件检查：除 `node_modules` 外全仓库 grep，未发现密钥、token、凭证、`.env` 文件；`node_modules` 与 `_scratch` 已在 `.gitignore` 中。
+
+如实说明：云电脑没有真实桌面，桌面点击展开/收起的手感、拖动顺滑度没有在真机上验证过，需要在自己的 Mac / Windows 电脑上跑一次确认。
+
+## 局限
+
+- 只支持中文聊天记录；规则提取会漏、也会错标，错的要靠人工在待确认区改。
+- 时间解析只认常见说法（今天/明天/下周X、几点、HH:MM、截止/之前等），太口语的说法（“过两天”“有空再说”）只标不确定，不猜具体时间。
+- 地点靠常见地点词 + “在/去/到 + 地点”识别，生僻地点可能漏掉。
+- 人名靠 `@名字`、`和/跟 + 名字` 识别，群聊里没 `@`、没提名字的约定提不出来。
+- 没有提醒、同步、OCR、微信直连；待办只存在本机。
+- 桌面点击手感需在真机验证（见上）。
+
+## 后续迭代路线
+
+截图 OCR（聊天截图直接识别）→ 微信直连（需用户授权）→ 自动提醒 → 导出 `.ics` → 桌宠动画和换皮肤 → 多人同步 → 账号系统。每一步先讨论、再做，不一次全上。
+
+## 项目结构
+
+```
+README.md                  中文说明（本文件）
+package.json / main.js / preload.js   Electron 入口与窗口控制
+src/extractor.js           本地规则提取（Node 与浏览器共用）
+src/renderer/              界面：index.html、styles.css、renderer.js
+tests/extractor.test.js    提取器测试
+examples/                  3 个示例聊天
+scripts/generate-demo-output.js  生成 docs/demo-output.md
+docs/                      demo 输出与界面截图
+```

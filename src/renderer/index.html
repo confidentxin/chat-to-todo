@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+<title>聊天转待办</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="collapsed">
+<div id="pet" title="点一下展开/收起，拖动可以移动位置">
+  <svg id="petSvg" viewBox="0 0 120 120" width="96" height="96" aria-label="桌宠小团子">
+    <circle cx="60" cy="62" r="46" fill="#fff8d6" stroke="#e8b93e" stroke-width="3"/>
+    <path d="M28 34 L22 12 L44 26 Z" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M92 34 L98 12 L76 26 Z" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M30 28 L27 16 L39 24 Z" fill="#f7c8d8"/>
+    <path d="M90 28 L93 16 L81 24 Z" fill="#f7c8d8"/>
+    <circle cx="44" cy="58" r="5" fill="#333"/>
+    <circle cx="76" cy="58" r="5" fill="#333"/>
+    <circle cx="46" cy="56" r="1.6" fill="#fff"/>
+    <circle cx="78" cy="56" r="1.6" fill="#fff"/>
+    <ellipse cx="34" cy="72" rx="7" ry="4.5" fill="#f7c8d8" opacity="0.8"/>
+    <ellipse cx="86" cy="72" rx="7" ry="4.5" fill="#f7c8d8" opacity="0.8"/>
+    <path d="M52 72 Q60 80 68 72" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="54" y="98" width="12" height="7" rx="3.5" fill="#e8b93e"/>
+  </svg>
+  <div class="pet-name">小团子</div>
+  <div class="pet-hint">点我展开待办</div>
+</div>
+
+<div id="panel">
+  <header id="panelHeader">
+    <h1>待办便签</h1>
+    <button id="collapseBtn" type="button">收起</button>
+  </header>
+  <p class="privacy">本地规则提取，不用 API Key，聊天文字不上传服务器。</p>
+  <label class="field-label" for="chatInput">粘贴聊天记录</label>
+  <textarea id="chatInput" rows="5" placeholder="例如：明天晚上19:30一起去体育馆打羽毛球"></textarea>
+  <div class="row">
+    <input type="file" id="fileInput" accept=".txt,text/plain">
+    <button id="extractBtn" type="button">提取待办</button>
+  </div>
+  <div class="row">
+    <input id="manualInput" placeholder="手动加一条待办（标题）">
+    <button id="addManualBtn" type="button">手动添加</button>
+  </div>
+
+  <h2>待确认（<span id="pendingCount">0</span>）</h2>
+  <div id="pendingList"></div>
+  <p id="pendingEmpty" class="empty">还没有提取结果。粘贴聊天文字后点「提取待办」。</p>
+
+  <h2>已确认清单（<span id="confirmedCount">0</span>）</h2>
+  <div id="confirmedList"></div>
+  <p id="confirmedEmpty" class="empty">确认后的待办会保存在本地，重启应用还在。</p>
+
+  <div class="row">
+    <button id="exportBtn" type="button">导出为 Markdown</button>
+  </div>
+  <p id="status" role="status"></p>
+</div>
+
+<script src="../extractor.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>
