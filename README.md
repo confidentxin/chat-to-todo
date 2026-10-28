@@ -4,23 +4,23 @@
 
 ## 解决什么问题
 
-约人、接任务都散在聊天记录里，翻不到、容易忘。缺的不是记事本，是一个“把聊天变成待办、并一直放在桌面上看得见”的动作。这个小应用就是做这件事：粘贴一段聊天文字，或上传 `.txt` 聊天记录，它会把里面的事项、时间、地点、相关人提取成待办，逐条确认后存在本地，导出成 Markdown。
+约人、接任务都散在聊天记录里，翻不到、容易忘。缺的不是记事本，是一个“把聊天变成待办、并一直放在桌面上看得见”的动作。这个小应用就是做这件事：粘贴一段聊天文字，或上传 `.txt` 聊天记录，它会把里面的事项、时间、地点、相关人提取成待办，逐条确认后存在本地，导出成 Markdown 或日历 `.ics` 文件。
 
 ## 目标用户
 
 经常在聊天里约事、接任务的学生和上班族。第一个用户就是作者本人。
 
-## MVP 功能（v1）
+## MVP 功能（v0.2.0）
 
 1. 桌面应用启动后显示桌宠小形象，点击切换展开/收起贴纸面板；小形象窗口可拖动。
 2. 面板里可粘贴聊天文字，或上传 `.txt` 聊天记录，点「提取待办」得到结果。
 3. 每条待办提取事项、时间、地点、相关人；相对时间（明天、下周三、今天等）按 Asia/Shanghai 解析成具体日期时间，不确定的标出来（不确定标记 + 原因）。
 4. 提取结果可编辑（标题、日期、时间、地点、相关人）、可删除、可勾选确认；确认后的清单存在本地（localStorage），重启应用还在。
-5. 导出已确认清单为 Markdown。
+5. 导出已确认清单为 Markdown；也可导出 `.ics`：只导出同时有合法日期 + 时间的已确认待办，使用 Asia/Shanghai 时区，结束时间为开始后 1 小时，其余跳过并显示导出/跳过条数。
 6. 不需要 API Key 也能跑：本地规则提取，聊天文字不上传服务器。
 7. 技术路线：Electron + HTML/CSS/JS，Mac / Windows 都可跑。
 
-今晚不做（后面迭代）：截图 OCR、微信直连、自动发提醒、导出 `.ics`、桌宠动画和换皮肤、多人同步、账号系统。
+今晚不做（后面迭代）：截图 OCR、微信直连、自动发提醒、桌宠动画和换皮肤、多人同步、账号系统。
 
 ## 怎么跑
 
@@ -32,9 +32,19 @@ npm start
 npm test
 ```
 
-`npm start` 启动桌面应用；`npm test` 跑提取器测试；`node scripts/generate-demo-output.js` 重新生成 `docs/demo-output.md`。
+`npm start` 启动桌面应用；`npm test` 同时跑提取器和 .ics 测试；`node scripts/generate-demo-output.js` 重新生成 `docs/demo-output.md`；`node scripts/generate-example-ics.js` 生成可复现的 `examples/example.ics`（固定基准日与 DTSTAMP）。
 
 提示：在 Linux root / 容器环境里启动 Electron 报错 `Running as root without --no-sandbox` 时，可用 `ELECTRON_DISABLE_SANDBOX=1` 再启动；Mac / Windows 正常使用不需要。
+
+## 导入日历
+
+先逐条确认待办，再点「导出为 .ics」，保存「待办清单.ics」。状态栏会显示导出与跳过数量；全部跳过时不下载文件。
+
+- 苹果日历 / 系统日历：打开支持导入的日历应用，选择“文件 → 导入”（或打开 .ics 文件），选中导出的文件与目标日历，确认导入。
+- Google 日历：在网页版设置里找到“导入和导出”，选择 .ics 文件及目标日历，再导入。
+- Outlook：在日历视图找到“添加日历 / 从文件上传”或“导入”入口，选择 .ics 文件及目标日历，确认导入。不同版本入口名称可能不同。
+
+只导出有具体日期和时间的待办，只有截止日的作业会跳过；每个事件固定 1 小时。导入是一次性复制，之后在日历中修改不会同步回本应用，也没有自动提醒或双向同步。各日历的实际导入兼容性尚需在自己的电脑上验证；重复导入前请检查是否会产生重复事件。
 
 ## 隐私说明
 
@@ -51,6 +61,8 @@ npm test
 - `chat-homework.txt`：作业周五之前交 → 2026-10-30，只有截止日、无具体时刻，标不确定。
 - `chat-dinner.txt`：下周三中午一起吃饭 → 2026-11-04 12:00，相关人小明。
 
+`examples/example.ics` 包含 1 个羽毛球事件（2026-10-29 19:30–20:30，Asia/Shanghai）；作业文本提取出的 2 条无具体时刻待办均跳过。
+
 完整输出见 `docs/demo-output.md`（由脚本生成），界面截图见 `docs/screenshot.png`。
 
 ## 验证过什么
@@ -58,12 +70,16 @@ npm test
 在云电脑（Linux + Node v24.22.1）上实际验证：
 
 - `npm install` 成功，Electron 33.4.11（见 `package-lock.json`）。
-- `npm test`：12 个测试全部通过。覆盖：明天 19:30、周五截止、下周三中午、无时间不编造、今天下午 3 点、人名提取、地点提取、寒暄过滤、中文数字时刻（晚上七点半）、下周一截止、发送人前缀清理、只有时刻时日期推断。
+- 提取器原有 12 个测试 + 新增 .ics 8 个测试，共 20 个用例全部通过。提取器覆盖：明天 19:30、周五截止、下周三中午、无时间不编造、今天下午 3 点、人名提取、地点提取、寒暄过滤、中文数字时刻（晚上七点半）、下周一截止、发送人前缀清理、只有时刻时日期推断。
+- .ics 测试覆盖羽毛球时间/地点/相关人、截止日跳过、文本转义、UTF-8 75 字节折行、UID 唯一、固定 DTSTAMP、跨午夜/年末、混合与非法日期时间、可选说明字段。
+- `node scripts/generate-example-ics.js`：导出 1 条、跳过 2 条；人工检查 VCALENDAR/VEVENT、上海时区、UID、DTSTAMP、CRLF 与示例时间。
 - `node scripts/generate-demo-output.js`：3 个示例的提取结果与测试口径一致（见 `docs/demo-output.md`）。
 - Electron 启动验证：在 `xvfb-run` 下用 `CHAT_TODO_SMOKE=1` 启动，窗口正常加载、展开面板并提取出示例待办，`capturePage` 生成 `docs/screenshot.png`，退出码 0。
+- .ics 点击验证：临时 Electron harness 加载页面，写入 localStorage 后重新加载，点击导出按钮，捕获下载链接和 Blob，实际保存文件并核对内容；确认导出 1 条、跳过 1 条，以及空清单/全部跳过提示。harness 与下载文件验证后删除。
+- 环境限制：受限环境首次 Electron 启动失败（sandbox_host_linux / SIGTRAP），环境外执行通过；DBus/GPU 初始化告警未影响截图和下载验证。
 - 敏感文件检查：除 `node_modules` 外全仓库 grep，未发现密钥、token、凭证、`.env` 文件；`node_modules` 与 `_scratch` 已在 `.gitignore` 中。
 
-如实说明：云电脑没有真实桌面，桌面点击展开/收起的手感、拖动顺滑度没有在真机上验证过，需要在自己的 Mac / Windows 电脑上跑一次确认。
+如实说明：未实际向苹果日历、Google 日历或 Outlook 导入；原有功能只做了提取器回归、示例生成和启动截图，未逐项验证 Markdown 导出、编辑确认、重启持久化等完整交互。需要在自己的电脑上确认这些原有功能未受影响。云电脑没有真实桌面，桌面点击展开/收起的手感、拖动顺滑度没有在真机上验证过，需要在自己的 Mac / Windows 电脑上跑一次确认。
 
 ## 局限
 
@@ -76,7 +92,7 @@ npm test
 
 ## 后续迭代路线
 
-截图 OCR（聊天截图直接识别）→ 微信直连（需用户授权）→ 自动提醒 → 导出 `.ics` → 桌宠动画和换皮肤 → 多人同步 → 账号系统。每一步先讨论、再做，不一次全上。
+截图 OCR（聊天截图直接识别）→ 微信直连（需用户授权）→ 自动提醒 → 桌宠动画和换皮肤 → 多人同步 → 账号系统。每一步先讨论、再做，不一次全上。
 
 ## 项目结构
 
@@ -84,9 +100,12 @@ npm test
 README.md                  中文说明（本文件）
 package.json / main.js / preload.js   Electron 入口与窗口控制
 src/extractor.js           本地规则提取（Node 与浏览器共用）
+src/ics.js                 .ics 导出（Node 与浏览器共用）
 src/renderer/              界面：index.html、styles.css、renderer.js
 tests/extractor.test.js    提取器测试
-examples/                  3 个示例聊天
+tests/ics.test.js          .ics 导出测试
+examples/                  3 个示例聊天与 example.ics
 scripts/generate-demo-output.js  生成 docs/demo-output.md
+scripts/generate-example-ics.js  生成 examples/example.ics
 docs/                      demo 输出与界面截图
 ```

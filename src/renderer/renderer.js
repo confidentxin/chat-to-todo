@@ -239,6 +239,25 @@ function exportMarkdown() {
   setStatus('已导出 ' + confirmed.length + ' 条待办为 Markdown。');
 }
 
+function exportIcs() {
+  if (!confirmed.length) { setStatus('已确认清单是空的，先确认几条再导出。'); return; }
+  const result = window.ChatTodoIcs.buildIcs(confirmed);
+  if (!result.exported.length) {
+    setStatus('没有可导出的待办，已导出 0 条，跳过 ' + result.skipped.length + ' 条（无具体时间或日期时间无效）。');
+    return;
+  }
+  const blob = new Blob([result.ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '待办清单.ics';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus('已导出 ' + result.exported.length + ' 条为 .ics，跳过 ' + result.skipped.length + ' 条（无具体时间或日期时间无效）。');
+}
+
 function attachDrag(el) {
   let startX = 0;
   let startY = 0;
@@ -296,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('collapseBtn').addEventListener('click', () => setExpanded(false));
   $('extractBtn').addEventListener('click', extractNow);
   $('exportBtn').addEventListener('click', exportMarkdown);
+  $('exportIcsBtn').addEventListener('click', exportIcs);
   $('addManualBtn').addEventListener('click', () => {
     const title = $('manualInput').value.trim();
     if (!title) { setStatus('先输入一条待办的标题。'); return; }
