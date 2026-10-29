@@ -6,23 +6,25 @@
 <title>聊天转待办</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="collapsed">
+<body class="collapsed skin-lemon" data-skin="lemon">
 <div id="pet" title="点一下展开/收起，拖动可以移动位置">
+  <div class="pet-float">
   <svg id="petSvg" viewBox="0 0 120 120" width="96" height="96" aria-label="桌宠小团子">
-    <circle cx="60" cy="62" r="46" fill="#fff8d6" stroke="#e8b93e" stroke-width="3"/>
-    <path d="M28 34 L22 12 L44 26 Z" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M92 34 L98 12 L76 26 Z" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M30 28 L27 16 L39 24 Z" fill="#f7c8d8"/>
-    <path d="M90 28 L93 16 L81 24 Z" fill="#f7c8d8"/>
+    <circle cx="60" cy="62" r="46" class="pet-body" fill="#fff8d6" stroke="#e8b93e" stroke-width="3"/>
+    <path d="M28 34 L22 12 L44 26 Z" class="pet-body pet-ear" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M92 34 L98 12 L76 26 Z" class="pet-body pet-ear" fill="#fff8d6" stroke="#e8b93e" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M30 28 L27 16 L39 24 Z" class="pet-blush" fill="#f7c8d8"/>
+    <path d="M90 28 L93 16 L81 24 Z" class="pet-blush" fill="#f7c8d8"/>
     <circle cx="44" cy="58" r="5" fill="#333"/>
     <circle cx="76" cy="58" r="5" fill="#333"/>
     <circle cx="46" cy="56" r="1.6" fill="#fff"/>
     <circle cx="78" cy="56" r="1.6" fill="#fff"/>
-    <ellipse cx="34" cy="72" rx="7" ry="4.5" fill="#f7c8d8" opacity="0.8"/>
-    <ellipse cx="86" cy="72" rx="7" ry="4.5" fill="#f7c8d8" opacity="0.8"/>
+    <ellipse cx="34" cy="72" rx="7" ry="4.5" class="pet-blush" fill="#f7c8d8" opacity="0.8"/>
+    <ellipse cx="86" cy="72" rx="7" ry="4.5" class="pet-blush" fill="#f7c8d8" opacity="0.8"/>
     <path d="M52 72 Q60 80 68 72" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
-    <rect x="54" y="98" width="12" height="7" rx="3.5" fill="#e8b93e"/>
+    <rect class="pet-accent" x="54" y="98" width="12" height="7" rx="3.5" fill="#e8b93e"/>
   </svg>
+  </div>
   <div class="pet-name">小团子</div>
   <div class="pet-hint">点我展开待办</div>
 </div>
@@ -33,6 +35,14 @@
     <button id="collapseBtn" type="button">收起</button>
   </header>
   <p class="privacy">本地规则提取，不用 API Key，聊天文字不上传服务器。</p>
+  <div class="settings">
+    <label><input id="reminderToggle" type="checkbox" checked> 本地提醒（仅应用打开时）</label>
+    <fieldset><legend>皮肤</legend>
+      <label><input type="radio" name="skin" value="lemon" checked> 柠檬黄</label>
+      <label><input type="radio" name="skin" value="mint"> 薄荷绿</label>
+      <label><input type="radio" name="skin" value="pink"> 樱花粉</label>
+    </fieldset>
+  </div>
   <label class="field-label" for="chatInput">粘贴聊天记录</label>
   <textarea id="chatInput" rows="5" placeholder="例如：明天晚上19:30一起去体育馆打羽毛球"></textarea>
   <div class="row">
@@ -61,6 +71,7 @@
 
 <script src="../extractor.js"></script>
 <script src="../ics.js"></script>
+<script src="../reminders.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>

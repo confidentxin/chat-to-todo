@@ -8,6 +8,71 @@ let uidCounter = 1;
 
 const $ = (id) => document.getElementById(id);
 
+const SETTINGS_KEY = 'chat-to-todo.settings.v1';
+const REMINDED_KEY = 'chat-to-todo.reminded.v1';
+const SKINS = ['lemon', 'mint', 'pink'];
+let settings = { reminders: true, skin: 'lemon' };
+let remindedIds = new Set();
+
+function readLocal(key) {
+  try { return JSON.parse(window.localStorage.getItem(key)); } catch (e) { return null; }
+}
+
+function writeLocal(key, value) {
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) {
+    // 存储不可用时仍保留内存态。
+  }
+}
+
+function applySkin(skin) {
+  SKINS.forEach((name) => document.body.classList.toggle('skin-' + name, skin === name));
+  document.body.dataset.skin = skin;
+}
+
+function loadSettings() {
+  const saved = readLocal(SETTINGS_KEY);
+  if (saved && typeof saved === 'object') {
+    settings.reminders = saved.reminders !== false;
+    if (SKINS.includes(saved.skin)) settings.skin = saved.skin;
+  }
+  const ids = readLocal(REMINDED_KEY);
+  remindedIds = new Set(Array.isArray(ids) ? ids : []);
+  $('reminderToggle').checked = settings.reminders;
+  applySkin(settings.skin);
+  document.querySelectorAll('input[name="skin"]').forEach((input) => {
+    input.checked = input.value === settings.skin;
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      settings.skin = input.value;
+      applySkin(settings.skin);
+      writeLocal(SETTINGS_KEY, settings);
+    });
+  });
+  $('reminderToggle').addEventListener('change', () => {
+    settings.reminders = $('reminderToggle').checked;
+    writeLocal(SETTINGS_KEY, settings);
+  });
+}
+
+function checkReminders() {
+  if (!settings.reminders) return;
+  if (!window.ChatTodoReminders || !window.ChatTodoReminders.getDueReminders) return;
+  window.ChatTodoReminders.getDueReminders(confirmed, new Date(), remindedIds).forEach((todo) => {
+    if (remindedIds.has(todo.id)) return;
+    remindedIds.add(todo.id);
+    writeLocal(REMINDED_KEY, Array.from(remindedIds));
+    const text = todo.title + ' · ' + todo.date + ' ' + todo.time + (todo.location ? ' · 地点：' + todo.location : '');
+    setStatus('提醒：' + text);
+    try {
+      if (typeof window.Notification === 'function' && window.Notification.permission !== 'denied') {
+        new window.Notification(todo.title, { body: text });
+      }
+    } catch (e) {
+      // 通知不可用或权限被拒绝时，状态栏已经显示提醒。
+    }
+  });
+}
+
 function loadConfirmed() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -302,6 +367,7 @@ function attachDrag(el) {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadConfirmed();
+  loadSettings();
   renderPending();
   renderConfirmed();
   setExpanded(false);
@@ -340,6 +406,9 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onerror = () => setStatus('读取文件失败，请重试。');
     reader.readAsText(file, 'utf-8');
   });
+
+  checkReminders();
+  setInterval(checkReminders, 60000);
 
   // 截图验证模式：自动展开并跑一条示例，方便截到面板
   if (window.chatTodo && window.chatTodo.smoke) {

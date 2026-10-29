@@ -10,7 +10,7 @@
 
 经常在聊天里约事、接任务的学生和上班族。第一个用户就是作者本人。
 
-## MVP 功能（v0.2.0）
+## MVP 功能（v0.3.0）
 
 1. 桌面应用启动后显示桌宠小形象，点击切换展开/收起贴纸面板；小形象窗口可拖动。
 2. 面板里可粘贴聊天文字，或上传 `.txt` 聊天记录，点「提取待办」得到结果。
@@ -20,7 +20,11 @@
 6. 不需要 API Key 也能跑：本地规则提取，聊天文字不上传服务器。
 7. 技术路线：Electron + HTML/CSS/JS，Mac / Windows 都可跑。
 
-今晚不做（后面迭代）：截图 OCR、微信直连、自动发提醒、桌宠动画和换皮肤、多人同步、账号系统。
+8. 本地提醒：应用打开时启动检查并每分钟检查一次，仅提醒已确认、未完成且同时有合法日期和时间的待办；按 Asia/Shanghai 时间，在开始前 15 分钟至开始瞬间（含边界）提醒，已过时不补提醒，每条最多一次。优先尝试系统通知，不可用或失败则只显示状态栏文字。
+9. 提醒开关默认开启，开关与已提醒 id 保存在本地；存储可用时重启不重复提醒。关闭应用就没有提醒，不提供后台服务。
+10. 桌宠内层轻柔浮动，尊重系统减少动态效果设置；柠檬黄（默认原配色）、薄荷绿、樱花粉三种皮肤，选择保存在本地，重启恢复。
+
+今晚不做（后面迭代）：截图 OCR、微信直连、多人同步、账号系统。
 
 ## 怎么跑
 
@@ -32,7 +36,7 @@ npm start
 npm test
 ```
 
-`npm start` 启动桌面应用；`npm test` 同时跑提取器和 .ics 测试；`node scripts/generate-demo-output.js` 重新生成 `docs/demo-output.md`；`node scripts/generate-example-ics.js` 生成可复现的 `examples/example.ics`（固定基准日与 DTSTAMP）。
+`npm start` 启动桌面应用；`npm test` 同时跑提取器、.ics 和提醒测试；`node scripts/generate-demo-output.js` 重新生成 `docs/demo-output.md`；`node scripts/generate-example-ics.js` 生成可复现的 `examples/example.ics`（固定基准日与 DTSTAMP）。
 
 提示：在 Linux root / 容器环境里启动 Electron 报错 `Running as root without --no-sandbox` 时，可用 `ELECTRON_DISABLE_SANDBOX=1` 再启动；Mac / Windows 正常使用不需要。
 
@@ -44,7 +48,7 @@ npm test
 - Google 日历：在网页版设置里找到“导入和导出”，选择 .ics 文件及目标日历，再导入。
 - Outlook：在日历视图找到“添加日历 / 从文件上传”或“导入”入口，选择 .ics 文件及目标日历，确认导入。不同版本入口名称可能不同。
 
-只导出有具体日期和时间的待办，只有截止日的作业会跳过；每个事件固定 1 小时。导入是一次性复制，之后在日历中修改不会同步回本应用，也没有自动提醒或双向同步。各日历的实际导入兼容性尚需在自己的电脑上验证；重复导入前请检查是否会产生重复事件。
+只导出有具体日期和时间的待办，只有截止日的作业会跳过；每个事件固定 1 小时。导入是一次性复制，之后在日历中修改不会同步回本应用，日历导出格式不包含提醒，也没有双向同步；应用内提醒仅在应用打开时检查。各日历的实际导入兼容性尚需在自己的电脑上验证；重复导入前请检查是否会产生重复事件。
 
 ## 隐私说明
 
@@ -69,17 +73,18 @@ npm test
 
 在云电脑（Linux + Node v24.22.1）上实际验证：
 
-- `npm install` 成功，Electron 33.4.11（见 `package-lock.json`）。
-- 提取器原有 12 个测试 + 新增 .ics 8 个测试，共 20 个用例全部通过。提取器覆盖：明天 19:30、周五截止、下周三中午、无时间不编造、今天下午 3 点、人名提取、地点提取、寒暄过滤、中文数字时刻（晚上七点半）、下周一截止、发送人前缀清理、只有时刻时日期推断。
+- `npm install` 成功，Electron 33.4.11（见 `package-lock.json`），v0.3.0 没有新增依赖。
+- 提取器原有 12 个测试 + .ics 8 个测试 + 提醒 8 个测试，共 28 个用例全部通过（`npm test` 退出 0）。提取器覆盖：明天 19:30、周五截止、下周三中午、无时间不编造、今天下午 3 点、人名提取、地点提取、寒暄过滤、中文数字时刻（晚上七点半）、下周一截止、发送人前缀清理、只有时刻时日期推断。提醒测试覆盖：提前 10 分钟提醒、16 分钟/1 小时不提醒、过时 5 分钟及 1 毫秒不提醒、精确开始及 15 分钟边界、Set/Array 去重、已完成不提醒、缺少/非法日期时间跳过、上海跨午夜和跨年；另在非上海宿主时区下跑过，28 个用例同样全过。
 - .ics 测试覆盖羽毛球时间/地点/相关人、截止日跳过、文本转义、UTF-8 75 字节折行、UID 唯一、固定 DTSTAMP、跨午夜/年末、混合与非法日期时间、可选说明字段。
 - `node scripts/generate-example-ics.js`：导出 1 条、跳过 2 条；人工检查 VCALENDAR/VEVENT、上海时区、UID、DTSTAMP、CRLF 与示例时间。
 - `node scripts/generate-demo-output.js`：3 个示例的提取结果与测试口径一致（见 `docs/demo-output.md`）。
-- Electron 启动验证：在 `xvfb-run` 下用 `CHAT_TODO_SMOKE=1` 启动，窗口正常加载、展开面板并提取出示例待办，`capturePage` 生成 `docs/screenshot.png`，退出码 0。
-- .ics 点击验证：临时 Electron harness 加载页面，写入 localStorage 后重新加载，点击导出按钮，捕获下载链接和 Blob，实际保存文件并核对内容；确认导出 1 条、跳过 1 条，以及空清单/全部跳过提示。harness 与下载文件验证后删除。
-- 环境限制：受限环境首次 Electron 启动失败（sandbox_host_linux / SIGTRAP），环境外执行通过；DBus/GPU 初始化告警未影响截图和下载验证。
+- Electron 启动验证（v0.3.0 重新跑过）：在 `xvfb-run` 下用 `ELECTRON_DISABLE_SANDBOX=1 CHAT_TODO_SMOKE=1` 启动，窗口正常加载、展开面板并提取出示例待办，`capturePage` 生成新的 `docs/screenshot.png`（可见提醒开关与 3 个皮肤选项），退出码 0。DBus/GPU 初始化告警未影响截图。
+- v0.3.0 临时 Electron interaction harness（独立 userData，验证后删除）：确认提醒开关与 3 个皮肤选项存在、默认柠檬黄且开关默认开、浮动动画只在内层元素上；切到薄荷绿后背景色变化、重载后皮肤与开关状态保持；提醒关时播种的 10 分钟后待办不提醒且不写已提醒 id，提醒开时重载后状态栏出现提醒且已提醒 id 已持久化；用抛异常的 Notification stub 时状态栏仍显示提醒且不崩溃、二次检查不重复；合成鼠标点击可展开/收起、拖动使窗口位移恰好 +20/+15 且不展开；樱花粉背景色正确。harness 与临时 profile 验证后删除。
+- .ics 点击验证（v0.2.0 做过，v0.3.0 未改 .ics 模块、未重跑）：临时 Electron harness 加载页面，写入 localStorage 后重新加载，点击导出按钮，捕获下载链接和 Blob，实际保存文件并核对内容；确认导出 1 条、跳过 1 条，以及空清单/全部跳过提示。harness 与下载文件验证后删除。
+- 环境限制：Codex 沙箱内 Electron 启动失败（sandbox_host_linux / SIGTRAP），沙箱外执行通过；DBus/GPU 初始化告警未影响截图和 harness 验证。
 - 敏感文件检查：除 `node_modules` 外全仓库 grep，未发现密钥、token、凭证、`.env` 文件；`node_modules` 与 `_scratch` 已在 `.gitignore` 中。
 
-如实说明：未实际向苹果日历、Google 日历或 Outlook 导入；原有功能只做了提取器回归、示例生成和启动截图，未逐项验证 Markdown 导出、编辑确认、重启持久化等完整交互。需要在自己的电脑上确认这些原有功能未受影响。云电脑没有真实桌面，桌面点击展开/收起的手感、拖动顺滑度没有在真机上验证过，需要在自己的 Mac / Windows 电脑上跑一次确认。
+如实说明：未实际向苹果日历、Google 日历或 Outlook 导入；未在真实桌面上看到系统通知弹窗（xvfb 环境下只验证了状态栏提醒与通知失败回退）；原有功能在 v0.3.0 只做了提取器/.ics/提醒回归、启动截图与上述 harness，未逐项验证 Markdown 导出、编辑确认等完整交互。需要在自己的电脑上确认：通知是否真的弹出、动画/拖动是否顺滑、皮肤与开关重启后是否保持、原有导出功能是否未受影响。云电脑没有真实桌面，桌面点击展开/收起的手感、拖动顺滑度没有在真机上验证过，需要在自己的 Mac / Windows 电脑上跑一次确认。
 
 ## 局限
 
@@ -87,12 +92,14 @@ npm test
 - 时间解析只认常见说法（今天/明天/下周X、几点、HH:MM、截止/之前等），太口语的说法（“过两天”“有空再说”）只标不确定，不猜具体时间。
 - 地点靠常见地点词 + “在/去/到 + 地点”识别，生僻地点可能漏掉。
 - 人名靠 `@名字`、`和/跟 + 名字` 识别，群聊里没 `@`、没提名字的约定提不出来。
-- 没有提醒、同步、OCR、微信直连；待办只存在本机。
+- 提醒只在应用打开时每分钟检查，关闭应用就没有提醒；休眠或暂停导致错过开始时间时不会补提醒。不提供后台提醒或日历提醒设置。
+- 系统通知取决于权限与系统支持；失败时只显示状态栏。存储不可用或本地数据被清除时，设置与跨重启去重无法保证。
+- 没有同步、OCR、微信直连；待办、皮肤与提醒开关只存在本机。
 - 桌面点击手感需在真机验证（见上）。
 
 ## 后续迭代路线
 
-截图 OCR（聊天截图直接识别）→ 微信直连（需用户授权）→ 自动提醒 → 桌宠动画和换皮肤 → 多人同步 → 账号系统。每一步先讨论、再做，不一次全上。
+截图 OCR（聊天截图直接识别）→ 微信直连（需用户授权）→ 多人同步 → 账号系统。每一步先讨论、再做，不一次全上。
 
 ## 项目结构
 
@@ -101,9 +108,11 @@ README.md                  中文说明（本文件）
 package.json / main.js / preload.js   Electron 入口与窗口控制
 src/extractor.js           本地规则提取（Node 与浏览器共用）
 src/ics.js                 .ics 导出（Node 与浏览器共用）
+src/reminders.js           上海时间提醒判断（纯 UMD，无 DOM/存储）
 src/renderer/              界面：index.html、styles.css、renderer.js
 tests/extractor.test.js    提取器测试
 tests/ics.test.js          .ics 导出测试
+tests/reminders.test.js    提醒窗口、去重与非法时间测试
 examples/                  3 个示例聊天与 example.ics
 scripts/generate-demo-output.js  生成 docs/demo-output.md
 scripts/generate-example-ics.js  生成 examples/example.ics
